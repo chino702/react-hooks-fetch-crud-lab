@@ -1,26 +1,55 @@
 import React, { useState } from "react";
 
-function QuestionForm(props) {
+function QuestionForm() {
   const [formData, setFormData] = useState({
     prompt: "",
-    answer1: "",
-    answer2: "",
-    answer3: "",
-    answer4: "",
-    correctIndex: 0,
+    answers: ["", "", "", ""],
+    correctIndex: "0",
   });
 
   function handleChange(event) {
-    setFormData({
-      ...formData,
-      [event.target.name]: event.target.value,
+    const { name, value } = event.target;
+    setFormData((prevFormData) => {
+      if (name.startsWith("answers")) {
+        const index = parseInt(name.slice(-1));
+        const updatedAnswers = [...prevFormData.answers];
+        updatedAnswers[index] = value;
+        return {
+          ...prevFormData,
+          answers: updatedAnswers,
+        };
+      } else {
+        return {
+          ...prevFormData,
+          [name]: value,
+        };
+      }
     });
   }
 
-  function handleSubmit(event) {
+  async function handleSubmit(event) {
     event.preventDefault();
-    console.log(formData);
+
+    const response = await fetch("http://localhost:4000/questions", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        prompt: formData.prompt,
+        answers: formData.answers.filter((answer) => answer !== ""),
+        correctIndex: parseInt(formData.correctIndex),
+      }),
+    });
+
+    if (response.ok) {
+      const newQuestion = await response.json();
+      // Update the UI or state with the new question
+      // For example, you can display a success message or navigate to the list of questions
+    } else {
+      console.error("Failed to create a new question");
+    }
   }
+
+  const dropdownValue = formData.correctIndex.toString();
 
   return (
     <section>
@@ -39,8 +68,8 @@ function QuestionForm(props) {
           Answer 1:
           <input
             type="text"
-            name="answer1"
-            value={formData.answer1}
+            name="answers[0]"
+            value={formData.answers[0]}
             onChange={handleChange}
           />
         </label>
@@ -48,8 +77,8 @@ function QuestionForm(props) {
           Answer 2:
           <input
             type="text"
-            name="answer2"
-            value={formData.answer2}
+            name="answers[1]"
+            value={formData.answers[1]}
             onChange={handleChange}
           />
         </label>
@@ -57,8 +86,8 @@ function QuestionForm(props) {
           Answer 3:
           <input
             type="text"
-            name="answer3"
-            value={formData.answer3}
+            name="answers[2]"
+            value={formData.answers[2]}
             onChange={handleChange}
           />
         </label>
@@ -66,8 +95,8 @@ function QuestionForm(props) {
           Answer 4:
           <input
             type="text"
-            name="answer4"
-            value={formData.answer4}
+            name="answers[3]"
+            value={formData.answers[3]}
             onChange={handleChange}
           />
         </label>
@@ -75,13 +104,14 @@ function QuestionForm(props) {
           Correct Answer:
           <select
             name="correctIndex"
-            value={formData.correctIndex}
+            value={dropdownValue}
             onChange={handleChange}
           >
-            <option value="0">{formData.answer1}</option>
-            <option value="1">{formData.answer2}</option>
-            <option value="2">{formData.answer3}</option>
-            <option value="3">{formData.answer4}</option>
+            {formData.answers.map((answer, index) => (
+              <option key={index} value={index.toString()}>
+                {answer}
+              </option>
+            ))}
           </select>
         </label>
         <button type="submit">Add Question</button>
